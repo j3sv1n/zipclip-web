@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZipClip — AI Video Shorts Generator</title>
+  <meta name="description" content="Transform long videos into viral YouTube Shorts with AI. Upload a video or paste a URL to get started." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="app-wrapper">
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo-icon">⚡</div>
+    <div class="header-text">
+      <h1>ZipClip</h1>
+      <p>AI-powered YouTube Shorts generator</p>
+    </div>
+    <div class="api-health">
+      <div id="api-health-indicator" class="health-dot offline"></div>
+      <span id="api-health-label">API Offline</span>
+    </div>
+  </header>
+
+  <!-- Upload / URL card -->
+  <div class="card" id="input-card">
+    <p class="section-label">Input</p>
+
+    <!-- Tabs -->
+    <div class="tabs" role="tablist">
+      <button class="tab-btn active" id="tab-file" role="tab" aria-selected="true" onclick="switchTab('file')">
+        📁 Upload File
+      </button>
+      <button class="tab-btn" id="tab-url" role="tab" aria-selected="false" onclick="switchTab('url')">
+        🔗 Video URL
+      </button>
+    </div>
+
+    <!-- File panel -->
+    <div class="tab-panel active" id="panel-file">
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="file-input" accept="video/*" aria-label="Upload video file" />
+        <span class="drop-icon">🎬</span>
+        <h3>Drop your video here</h3>
+        <p>or click to browse &nbsp;·&nbsp; MP4, MOV, AVI, MKV up to 500 MB</p>
+        <div class="file-selected-name" id="file-name-display"></div>
+      </div>
+    </div>
+
+    <!-- URL panel -->
+    <div class="tab-panel" id="panel-url">
+      <div class="input-group">
+        <label for="video-url">YouTube or direct video URL</label>
+        <input type="url" id="video-url" placeholder="https://www.youtube.com/watch?v=..." />
+      </div>
+    </div>
+
+    <!-- Processing options -->
+    <div class="options-grid" style="margin-top:22px;">
+      <div class="input-group" style="margin:0">
+        <label for="mode-select">Processing Mode</label>
+        <select id="mode-select">
+          <option value="continuous">Continuous</option>
+          <option value="multi_segment" selected>Multi-Segment</option>
+          <option value="scene_based">Scene-Based</option>
+        </select>
+      </div>
+      <div class="input-group" style="margin:0">
+        <label for="duration-input">Target Duration (seconds)</label>
+        <input type="number" id="duration-input" value="60" min="30" max="300" step="10" />
+      </div>
+    </div>
+
+    <!-- Toggles -->
+    <div style="margin-top:18px;">
+      <div class="toggle-row">
+        <div>
+          <span>Add Subtitles</span>
+          <small>Burn captions into the video</small>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-subtitles" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <span>Auto-Approve</span>
+          <small>Skip manual segment review</small>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-auto-approve" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Advanced / subtitle styling -->
+    <button class="advanced-toggle" id="advanced-toggle-btn" onclick="toggleAdvanced()">
+      ⚙️ Subtitle Styling <span class="chevron">▾</span>
+    </button>
+    <div class="advanced-section" id="advanced-section">
+      <div class="advanced-inner">
+        <div class="input-group" style="margin:0">
+          <label for="sub-font">Font</label>
+          <select id="sub-font">
+            <option value="Franklin-Gothic" selected>Franklin Gothic</option>
+            <option value="Arial">Arial</option>
+            <option value="Impact">Impact</option>
+            <option value="Helvetica">Helvetica</option>
+            <option value="Roboto">Roboto</option>
+          </select>
+        </div>
+        <div class="input-group" style="margin:0">
+          <label for="sub-fontsize">Font Size</label>
+          <input type="number" id="sub-fontsize" value="80" min="20" max="200" />
+        </div>
+        <div class="input-group" style="margin:0">
+          <label for="sub-color">Text Color</label>
+          <input type="color" id="sub-color" value="#2699ff" />
+        </div>
+        <div class="input-group" style="margin:0">
+          <label for="sub-stroke-color">Stroke Color</label>
+          <input type="color" id="sub-stroke-color" value="#000000" />
+        </div>
+        <div class="input-group" style="margin:0">
+          <label for="sub-stroke-width">Stroke Width</label>
+          <input type="number" id="sub-stroke-width" value="2" min="0" max="10" />
+        </div>
+        <div class="input-group" style="margin:0">
+          <label for="llm-model">LLM Model</label>
+          <select id="llm-model">
+            <option value="gpt-4o-mini" selected>GPT-4o Mini</option>
+            <option value="gpt-4o">GPT-4o</option>
+            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="submit-btn" onclick="submitJob()">
+      <span id="submit-icon">⚡</span>
+      <span id="submit-label">Generate Short</span>
+    </button>
+  </div>
+
+  <!-- Progress card -->
+  <div class="card" id="progress-card">
+    <div class="progress-header">
+      <div class="spinner" id="progress-spinner"></div>
+      <h2 id="progress-title">Processing video…</h2>
+      <span class="job-id-badge" id="progress-job-id"></span>
+    </div>
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="progress-bar"></div>
+    </div>
+    <div>
+      <span class="progress-message" id="progress-message">Starting…</span>
+      <span class="progress-pct" id="progress-pct">0%</span>
+    </div>
+  </div>
+
+  <!-- Result card -->
+  <div class="card" id="result-card">
+    <div class="result-header">
+      <div class="status-dot" id="result-dot"></div>
+      <h2 id="result-title"></h2>
+    </div>
+    <div class="result-meta" id="result-meta"></div>
+    <div id="result-body"></div>
+    <button class="btn-secondary new-job-btn" onclick="resetToInput()">
+      ← Process Another Video
+    </button>
+  </div>
+
+  <!-- Jobs history -->
+  <div class="card" id="jobs-card">
+    <div class="jobs-header">
+      <p class="section-label" style="margin:0">Recent Jobs</p>
+      <button class="btn-secondary" style="padding:6px 14px;font-size:0.78rem" onclick="loadJobs()">↻ Refresh</button>
+    </div>
+    <div class="jobs-list" id="jobs-list">
+      <div class="jobs-empty">No jobs yet. Submit a video to get started.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
