@@ -116,6 +116,13 @@ function setSubmitLoading(loading) {
 
 // ── API: Upload file ───────────────────────────────────────────────────────
 async function uploadFile(file, opts) {
+    const params = new URLSearchParams({
+        mode: opts.mode,
+        add_subtitles: opts.add_subtitles,
+        target_duration: opts.target_duration,
+        auto_approve: opts.auto_approve
+    });
+
     const form = new FormData();
     form.append('request', JSON.stringify({
         mode: opts.mode,
@@ -129,7 +136,7 @@ async function uploadFile(file, opts) {
     }));
     form.append('file', file);
 
-    const res = await fetch(`${API_BASE}/api/process`, {
+    const res = await fetch(`${API_BASE}/api/process?${params.toString()}`, {
         method: 'POST',
         body: form,
     });
@@ -143,6 +150,13 @@ async function uploadFile(file, opts) {
 
 // ── API: Submit URL ────────────────────────────────────────────────────────
 async function submitUrl(url, opts) {
+    const params = new URLSearchParams({
+        mode: opts.mode,
+        add_subtitles: opts.add_subtitles,
+        target_duration: opts.target_duration,
+        auto_approve: opts.auto_approve
+    });
+
     const form = new FormData();
     form.append('request', JSON.stringify({
         video_url: url,
@@ -154,7 +168,7 @@ async function submitUrl(url, opts) {
         llm_config: opts.llm_config,
     }));
 
-    const res = await fetch(`${API_BASE}/api/process`, {
+    const res = await fetch(`${API_BASE}/api/process?${params.toString()}`, {
         method: 'POST',
         body: form,
     });
