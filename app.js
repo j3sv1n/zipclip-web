@@ -1,6 +1,6 @@
 /* ===== ZipClip Web UI — app.js ===== */
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = window.API_BASE_URL || (typeof process !== 'undefined' && process.env && process.env.API_BASE_URL) || 'http://localhost:8000';
 
 // ── State ──────────────────────────────────────────────────────────────────
 let currentJobId = null;
@@ -39,17 +39,35 @@ dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-ove
 dropZone.addEventListener('drop', e => {
     e.preventDefault();
     dropZone.classList.remove('drag-over');
-    const file = e.dataTransfer.files[0];
-    if (file) setSelectedFile(file);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length) setSelectedFiles(files);
 });
 fileInput.addEventListener('change', () => {
-    if (fileInput.files[0]) setSelectedFile(fileInput.files[0]);
+    const files = Array.from(fileInput.files);
+    if (files.length) setSelectedFiles(files);
 });
 
-function setSelectedFile(file) {
-    fileInput._selectedFile = file;
-    fileNameDisplay.textContent = `✓ ${file.name}`;
-    fileNameDisplay.style.display = 'block';
+function setSelectedFiles(files) {
+    if (files.length > 10) {
+        toast('Maximum 10 files allowed.', 'error');
+        files = files.slice(0, 10);
+    }
+    fileInput._selectedFiles = files;
+    renderFileList(files);
+}
+
+function renderFileList(files) {
+    const list = document.getElementById('file-list');
+    if (!files.length) {
+        list.innerHTML = '';
+        return;
+    }
+    list.innerHTML = files.map(f => `
+        <div class="file-item">
+            <span>${f.type.startsWith('image/') ? '🖼️' : '🎬'}</span>
+            ${f.name}
+        </div>
+    `).join('');
 }
 
 // ── Collect options ────────────────────────────────────────────────────────
@@ -84,9 +102,9 @@ async function submitJob() {
         let jobData;
 
         if (activeTab === 'file') {
-            const file = fileInput._selectedFile || fileInput.files[0];
-            if (!file) { toast('Please select a video file first.', 'error'); return; }
-            jobData = await uploadFile(file, opts);
+            const files = fileInput._selectedFiles || Array.from(fileInput.files);
+            if (!files.length) { toast('Please select media files first.', 'error'); return; }
+            jobData = await uploadFiles(files, opts);
         } else {
             const url = document.getElementById('video-url').value.trim();
             if (!url) { toast('Please enter a video URL.', 'error'); return; }
@@ -114,8 +132,8 @@ function setSubmitLoading(loading) {
     label.textContent = loading ? 'Submitting…' : 'Generate Short';
 }
 
-// ── API: Upload file ───────────────────────────────────────────────────────
-async function uploadFile(file, opts) {
+// ── API: Upload files ──────────────────────────────────────────────────────
+async function uploadFiles(files, opts) {
     const params = new URLSearchParams({
         mode: opts.mode,
         add_subtitles: opts.add_subtitles,
@@ -134,7 +152,10 @@ async function uploadFile(file, opts) {
         return_transcript: false,
         return_segments_preview: false,
     }));
-    form.append('file', file);
+
+    files.forEach(file => {
+        form.append('files', file);
+    });
 
     const res = await fetch(`${API_BASE}/api/process?${params.toString()}`, {
         method: 'POST',
@@ -289,9 +310,8 @@ function resetToInput() {
     stopPolling();
     currentJobId = null;
     fileInput.value = '';
-    fileInput._selectedFile = null;
-    fileNameDisplay.style.display = 'none';
-    fileNameDisplay.textContent = '';
+    fileInput._selectedFiles = null;
+    document.getElementById('file-list').innerHTML = '';
     document.getElementById('input-card').style.display = 'block';
     document.getElementById('progress-card').style.display = 'none';
     document.getElementById('result-card').style.display = 'none';
