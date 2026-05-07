@@ -72,11 +72,14 @@ function renderFileList(files) {
 
 // ── Collect options ────────────────────────────────────────────────────────
 function getOptions() {
+    const promptEl = document.getElementById('user-prompt');
+    const userPrompt = promptEl ? promptEl.value.trim() : '';
     return {
         mode: document.getElementById('mode-select').value,
         target_duration: parseInt(document.getElementById('duration-input').value, 10),
         add_subtitles: document.getElementById('toggle-subtitles').checked,
         auto_approve: document.getElementById('toggle-auto-approve').checked,
+        user_prompt: userPrompt || null,
         subtitle_config: {
             font: document.getElementById('sub-font').value,
             fontsize: parseInt(document.getElementById('sub-fontsize').value, 10),
@@ -147,6 +150,7 @@ async function uploadFiles(files, opts) {
         add_subtitles: opts.add_subtitles,
         target_duration: opts.target_duration,
         auto_approve: opts.auto_approve,
+        user_prompt: opts.user_prompt,
         subtitle_config: opts.subtitle_config,
         llm_config: opts.llm_config,
         return_transcript: false,
@@ -185,6 +189,7 @@ async function submitUrl(url, opts) {
         add_subtitles: opts.add_subtitles,
         target_duration: opts.target_duration,
         auto_approve: opts.auto_approve,
+        user_prompt: opts.user_prompt,
         subtitle_config: opts.subtitle_config,
         llm_config: opts.llm_config,
     }));
@@ -251,7 +256,24 @@ function showProgress(job) {
     document.getElementById('progress-card').style.display = 'block';
     document.getElementById('result-card').style.display = 'none';
     document.getElementById('progress-job-id').textContent = `#${job.job_id}`;
+    // Make sure no stale preview keeps streaming while we wait
+    clearPreview();
     updateProgress(job);
+}
+
+function clearPreview() {
+    const previewWrap = document.getElementById('result-preview');
+    const video = document.getElementById('result-video');
+    if (video) {
+        try { video.pause(); } catch (_) { /* ignore */ }
+        video.removeAttribute('src');
+        video.load();
+    }
+    if (previewWrap) previewWrap.style.display = 'none';
+    const refineSection = document.getElementById('refine-section');
+    if (refineSection) refineSection.style.display = 'none';
+    const refinePrompt = document.getElementById('refine-prompt');
+    if (refinePrompt) refinePrompt.value = '';
 }
 
 function updateProgress(job) {
@@ -278,6 +300,9 @@ function showResult(job) {
     const title = document.getElementById('result-title');
     const meta = document.getElementById('result-meta');
     const body = document.getElementById('result-body');
+    const previewWrap = document.getElementById('result-preview');
+    const video = document.getElementById('result-video');
+    const refineSection = document.getElementById('refine-section');
 
     if (job.status === 'completed') {
         dot.className = 'status-dot success';
@@ -287,9 +312,17 @@ function showResult(job) {
         const chips = [
             job.processing_mode && `Mode: <span>${job.processing_mode.replace('_', ' ')}</span>`,
             job.target_duration_used && `Duration: <span>${job.target_duration_used}s</span>`,
+            job.parent_job_id && `Refined from: <span>#${job.parent_job_id}</span>`,
             job.job_id && `Job: <span>#${job.job_id}</span>`,
         ].filter(Boolean);
         meta.innerHTML = chips.map(c => `<div class="meta-chip">${c}</div>`).join('');
+
+        // Inline preview
+        if (video && previewWrap) {
+            video.src = `${API_BASE}/api/preview/${job.job_id}`;
+            previewWrap.style.display = 'flex';
+            try { video.load(); } catch (_) { /* ignore */ }
+        }
 
         // Download button
         body.innerHTML = `
@@ -297,11 +330,76 @@ function showResult(job) {
         ⬇ Download Short
       </a>
     `;
+
+        // Refinement section
+        if (refineSection) {
+            refineSection.style.display = 'block';
+            refineSection.dataset.jobId = job.job_id;
+            const refinePrompt = document.getElementById('refine-prompt');
+            if (refinePrompt) refinePrompt.value = '';
+            setRefineLoading(false);
+        }
     } else {
         dot.className = 'status-dot error';
         title.textContent = 'Processing Failed';
         meta.innerHTML = `<div class="meta-chip">Job: <span>#${job.job_id}</span></div>`;
         body.innerHTML = `<div class="error-box">⚠ ${job.error || 'An unknown error occurred.'}</div>`;
+
+        if (previewWrap) previewWrap.style.display = 'none';
+        if (refineSection) refineSection.style.display = 'none';
+    }
+}
+
+// ── Refinement ─────────────────────────────────────────────────────────────
+function setRefineLoading(loading) {
+    const btn = document.getElementById('refine-btn');
+    const icon = document.getElementById('refine-icon');
+    const label = document.getElementById('refine-label');
+    if (!btn) return;
+    btn.disabled = loading;
+    if (icon) icon.textContent = loading ? '⏳' : '✨';
+    if (label) label.textContent = loading ? 'Submitting…' : 'Apply Changes';
+}
+
+async function submitRefinement() {
+    const refineSection = document.getElementById('refine-section');
+    const promptEl = document.getElementById('refine-prompt');
+    if (!refineSection || !promptEl) return;
+
+    const parentJobId = refineSection.dataset.jobId || currentJobId;
+    if (!parentJobId) {
+        toast('No job to refine.', 'error');
+        return;
+    }
+
+    const refinementPrompt = promptEl.value.trim();
+    if (!refinementPrompt) {
+        toast('Please describe what you want changed.', 'error');
+        return;
+    }
+
+    try {
+        setRefineLoading(true);
+
+        const res = await fetch(`${API_BASE}/api/refine/${parentJobId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refinement_prompt: refinementPrompt }),
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || `HTTP ${res.status}`);
+        }
+
+        const job = await res.json();
+        currentJobId = job.job_id;
+        showProgress(job);
+        startPolling(job.job_id);
+        loadJobs();
+    } catch (err) {
+        toast(`Error: ${err.message}`, 'error');
+        setRefineLoading(false);
     }
 }
 
@@ -316,6 +414,9 @@ function resetToInput() {
     document.getElementById('progress-card').style.display = 'none';
     document.getElementById('result-card').style.display = 'none';
     document.getElementById('progress-bar').style.width = '0%';
+    const promptEl = document.getElementById('user-prompt');
+    if (promptEl) promptEl.value = '';
+    clearPreview();
 }
 
 // ── Jobs history ───────────────────────────────────────────────────────────
