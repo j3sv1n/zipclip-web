@@ -1,6 +1,12 @@
 /* ===== ZipClip Web UI — app.js ===== */
 
-const API_BASE = window.API_BASE_URL || (typeof process !== 'undefined' && process.env && process.env.API_BASE_URL) || '';
+// Dynamically determine API Base URL based on environment
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+
+// If running locally, connect to local backend (8000). Otherwise, connect to Hugging Face Space.
+// In production, Vercel will securely replace this placeholder with your environment variable
+const PROD_API_URL = 'VERCEL_API_URL_PLACEHOLDER';
+const API_BASE = isLocal ? 'http://localhost:8000' : PROD_API_URL;
 
 // ── State ──────────────────────────────────────────────────────────────────
 let currentJobId = null;
