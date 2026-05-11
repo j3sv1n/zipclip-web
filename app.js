@@ -1,6 +1,6 @@
 /* ===== ZipClip Web UI — app.js ===== */
 
-const API_BASE = window.API_BASE_URL || (typeof process !== 'undefined' && process.env && process.env.API_BASE_URL) || 'http://localhost:8000';
+const API_BASE = window.API_BASE_URL || (typeof process !== 'undefined' && process.env && process.env.API_BASE_URL) || '';
 
 // ── State ──────────────────────────────────────────────────────────────────
 let currentJobId = null;
