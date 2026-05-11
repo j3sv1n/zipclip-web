@@ -1,6 +1,8 @@
 /* ===== ZipClip Web UI — app.js ===== */
 
-const API_BASE = window.API_BASE_URL || (typeof process !== 'undefined' && process.env && process.env.API_BASE_URL) || '';
+// Replace this with your Hugging Face Space direct URL
+// It usually looks like: 'https://yourusername-spacename.hf.space'
+const API_BASE = 'https://YOUR_HUGGINGFACE_SPACE_URL.hf.space';
 
 // ── State ──────────────────────────────────────────────────────────────────
 let currentJobId = null;
