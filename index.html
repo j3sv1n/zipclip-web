@@ -76,6 +76,16 @@
         </div>
       </div>
 
+      <!-- Optional editing prompt -->
+      <div class="input-group prompt-group" style="margin-top:22px;margin-bottom:0">
+        <label for="user-prompt">
+          Editing Prompt <span class="label-hint">(optional)</span>
+        </label>
+        <textarea id="user-prompt" rows="3"
+          placeholder="e.g. Focus on the funniest moments and skip the intro, keep it upbeat and punchy"></textarea>
+        <small class="prompt-help">Tell the AI in plain language how you want the short edited. Leave blank for default behaviour.</small>
+      </div>
+
       <!-- Toggles -->
       <div style="margin-top:18px;">
         <div class="toggle-row">
@@ -172,7 +182,28 @@
         <h2 id="result-title"></h2>
       </div>
       <div class="result-meta" id="result-meta"></div>
+
+      <!-- Inline preview (shown only on success) -->
+      <div class="result-preview" id="result-preview" style="display:none;">
+        <video id="result-video" controls playsinline preload="metadata"></video>
+      </div>
+
       <div id="result-body"></div>
+
+      <!-- Refinement section (shown only on success) -->
+      <div class="refine-section" id="refine-section" style="display:none;">
+        <p class="section-label" style="margin-bottom:10px;">Suggest changes</p>
+        <div class="input-group" style="margin:0">
+          <textarea id="refine-prompt" rows="3"
+            placeholder="e.g. Make it shorter and end on the punchline, swap out the boring intro segment"></textarea>
+        </div>
+        <button class="btn-primary refine-btn" id="refine-btn" onclick="submitRefinement()">
+          <span id="refine-icon">✨</span>
+          <span id="refine-label">Apply Changes</span>
+        </button>
+        <small class="prompt-help" style="display:block;margin-top:10px;">Re-edits the same source with your feedback. The previous version stays in your job history.</small>
+      </div>
+
       <button class="btn-secondary new-job-btn" onclick="resetToInput()">
         ← Process Another Video
       </button>

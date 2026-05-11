@@ -311,7 +311,8 @@ input[type="text"],
 input[type="url"],
 input[type="number"],
 input[type="color"],
-select {
+select,
+textarea {
   width: 100%;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid var(--border);
@@ -326,10 +327,37 @@ select {
   -webkit-appearance: none;
 }
 
+textarea {
+  resize: vertical;
+  min-height: 70px;
+  line-height: 1.5;
+}
+
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.label-hint {
+  font-weight: 400;
+  color: var(--text-dim);
+  margin-left: 4px;
+}
+
+.prompt-help {
+  display: block;
+  margin-top: 7px;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.prompt-group label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 input[type="color"] {
@@ -694,6 +722,40 @@ select option {
 
 .new-job-btn {
   margin-top: 14px;
+}
+
+/* ── Result preview ── */
+.result-preview {
+  margin-bottom: 18px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #000;
+  display: flex;
+  justify-content: center;
+}
+
+.result-preview video {
+  width: 100%;
+  max-height: 70vh;
+  display: block;
+  background: #000;
+  outline: none;
+}
+
+/* ── Refinement ── */
+.refine-section {
+  margin-top: 22px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+}
+
+.refine-btn {
+  margin-top: 14px;
+}
+
+.refine-btn:disabled {
+  cursor: not-allowed;
 }
 
 /* ── Jobs history ── */
