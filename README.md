@@ -18,7 +18,7 @@ A clean and modern web interface for the ZipClip AI Video Shorts Generator.
 1. Open `index.html` in any modern web browser.
 2. Ensure the "API Online" indicator in the header is green.
 3. Upload a file or paste a URL.
-4. Customize your settings and click "Generate Short".
+4. Customize your settings and click "Generate Shorts".
 
 ## Development
 This is a vanilla HTML/CSS/JS project. No build steps are required.
