@@ -98,7 +98,7 @@ function getOptions() {
         auto_approve: document.getElementById('toggle-auto-approve')?.checked ?? true,
         user_prompt: userPrompt || null,
         subtitle_config: {
-            font: document.getElementById('sub-font')?.value ?? "Franklin-Gothic",
+            font: document.getElementById('sub-font')?.value ?? "Montserrat-ExtraBold",
             fontsize: parseInt(document.getElementById('sub-fontsize')?.value ?? "80", 10),
             color: document.getElementById('sub-color')?.value ?? "#2699ff",
             stroke_color: document.getElementById('sub-stroke-color')?.value ?? "#000000",
