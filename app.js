@@ -1,8 +1,11 @@
 /* ===== ZipClip Web UI — app.js ===== */
 
-// Replace this with your Hugging Face Space direct URL
-// It usually looks like: 'https://yourusername-spacename.hf.space'
-const API_BASE = 'https://YOUR_HUGGINGFACE_SPACE_URL.hf.space';
+// Dynamically determine API Base URL based on environment
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+
+// If running locally, connect to local backend (8000). Otherwise, connect to Hugging Face Space.
+const PROD_API_URL = 'https://YOUR_HUGGINGFACE_SPACE_URL.hf.space';
+const API_BASE = isLocal ? 'http://localhost:8000' : PROD_API_URL;
 
 // ── State ──────────────────────────────────────────────────────────────────
 let currentJobId = null;
