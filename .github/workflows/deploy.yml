@@ -3,7 +3,7 @@ name: Deploy Frontend to Vercel
 on:
   push:
     branches:
-      - deploying
+      - main
     # paths:
     #   - 'app.js'
     #   - 'index.html'
