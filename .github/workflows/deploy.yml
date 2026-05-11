@@ -4,11 +4,11 @@ on:
   push:
     branches:
       - deploying
-    paths:
-      - 'app.js'
-      - 'index.html'
-      - 'style.css'
-      - '.github/workflows/deploy.yml'
+    # paths:
+    #   - 'app.js'
+    #   - 'index.html'
+    #   - 'style.css'
+    #   - '.github/workflows/deploy.yml'
 
 jobs:
   deploy:
