@@ -4,7 +4,8 @@
 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
 
 // If running locally, connect to local backend (8000). Otherwise, connect to Hugging Face Space.
-const PROD_API_URL = 'https://YOUR_HUGGINGFACE_SPACE_URL.hf.space';
+// In production, Vercel will securely replace this placeholder with your environment variable
+const PROD_API_URL = 'VERCEL_API_URL_PLACEHOLDER';
 const API_BASE = isLocal ? 'http://localhost:8000' : PROD_API_URL;
 
 // ── State ──────────────────────────────────────────────────────────────────
