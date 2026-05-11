@@ -8,6 +8,17 @@ const isLocal = window.location.hostname === 'localhost' || window.location.host
 const PROD_API_URL = 'VERCEL_API_URL_PLACEHOLDER';
 const API_BASE = isLocal ? 'http://localhost:8000' : PROD_API_URL;
 
+// Generate or retrieve a persistent Client ID to isolate jobs
+function getClientId() {
+    let clientId = localStorage.getItem('zipclip_client_id');
+    if (!clientId) {
+        clientId = 'client_' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+        localStorage.setItem('zipclip_client_id', clientId);
+    }
+    return clientId;
+}
+const CLIENT_ID = getClientId();
+
 // ── State ──────────────────────────────────────────────────────────────────
 let currentJobId = null;
 let pollInterval = null;
@@ -169,6 +180,7 @@ async function uploadFiles(files, opts) {
 
     const res = await fetch(`${API_BASE}/api/process?${params.toString()}`, {
         method: 'POST',
+        headers: { 'X-Client-ID': CLIENT_ID },
         body: form,
     });
 
@@ -202,6 +214,7 @@ async function submitUrl(url, opts) {
 
     const res = await fetch(`${API_BASE}/api/process?${params.toString()}`, {
         method: 'POST',
+        headers: { 'X-Client-ID': CLIENT_ID },
         body: form,
     });
 
@@ -243,7 +256,9 @@ function stopPolling() {
 
 async function pollStatus(jobId) {
     try {
-        const res = await fetch(`${API_BASE}/api/status/${jobId}`);
+        const res = await fetch(`${API_BASE}/api/status/${jobId}`, {
+            headers: { 'X-Client-ID': CLIENT_ID }
+        });
         if (!res.ok) return;
         const job = await res.json();
         updateProgress(job);
@@ -325,14 +340,14 @@ function showResult(job) {
 
         // Inline preview
         if (video && previewWrap) {
-            video.src = `${API_BASE}/api/preview/${job.job_id}`;
+            video.src = `${API_BASE}/api/preview/${job.job_id}?client_id=${CLIENT_ID}`;
             previewWrap.style.display = 'flex';
             try { video.load(); } catch (_) { /* ignore */ }
         }
 
         // Download button
         body.innerHTML = `
-      <a class="btn-download" href="${API_BASE}/api/download/${job.job_id}" download>
+      <a class="btn-download" href="${API_BASE}/api/download/${job.job_id}?client_id=${CLIENT_ID}" download>
         ⬇ Download Short
       </a>
     `;
@@ -389,7 +404,10 @@ async function submitRefinement() {
 
         const res = await fetch(`${API_BASE}/api/refine/${parentJobId}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-Client-ID': CLIENT_ID
+            },
             body: JSON.stringify({ refinement_prompt: refinementPrompt }),
         });
 
@@ -428,7 +446,9 @@ function resetToInput() {
 // ── Jobs history ───────────────────────────────────────────────────────────
 async function loadJobs() {
     try {
-        const res = await fetch(`${API_BASE}/api/jobs?limit=10`);
+        const res = await fetch(`${API_BASE}/api/jobs?limit=10`, {
+            headers: { 'X-Client-ID': CLIENT_ID }
+        });
         if (!res.ok) return;
         const jobs = await res.json();
         renderJobs(jobs);
@@ -456,7 +476,9 @@ function renderJobs(jobs) {
 
 async function viewJob(jobId) {
     try {
-        const res = await fetch(`${API_BASE}/api/status/${jobId}`);
+        const res = await fetch(`${API_BASE}/api/status/${jobId}`, {
+            headers: { 'X-Client-ID': CLIENT_ID }
+        });
         if (!res.ok) return;
         const job = await res.json();
 
